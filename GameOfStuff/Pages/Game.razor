@@ -1,0 +1,53 @@
+﻿@page "/game/{SessionID}";
+@using Microsoft.AspNetCore.SignalR.Client;
+@inject NavigationManager navManager
+
+<h3>Game</h3>
+@if (Answers != null)
+{
+    @foreach (var answer in Answers)
+    {
+        <p>@answer</p>
+    }
+}
+<input type="text" name="answer" @bind-value="UserAnswer" />
+<button type="submit" @onclick="@(() => SubmitAnswer(UserAnswer))">Submit Answer</button>
+
+@code {
+
+    [Parameter]
+    public string SessionID { get; set; }
+    public List<String> Answers { get; set; } = new List<string>();
+    public string UserAnswer { get; set; }
+    HubConnection connection;
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (connection == null)
+        {
+            connection = new HubConnectionBuilder()
+                .WithUrl($"{navManager.BaseUri}gamehub")
+                .Build();
+            await connection.StartAsync();
+            await connection.InvokeAsync("JoinGroup", SessionID);
+            connection.On<string>("AddAnswer", AddAnswer);
+        }
+    }
+
+    public void AddAnswer(string answer)
+    {
+        Answers.Add(answer);
+        StateHasChanged();
+    }
+
+    public async Task SubmitAnswer(string answer)
+    {
+        var gameModel = new GameModel()
+        {
+            SessionID = SessionID,
+            Answer = answer
+        };
+        await connection.InvokeAsync("SubmitAnswer", gameModel);
+    }
+
+}
