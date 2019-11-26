@@ -1,0 +1,49 @@
+﻿@page "/board/{GameID}";
+@using Microsoft.AspNetCore.SignalR.Client;
+@using GameOfStuff.Data;
+@inject NavigationManager NavManager
+@inject GameService GameService
+
+<h3>Game</h3>
+@foreach (Player player in GameModel.Players)
+{
+    <p>@player.Answer</p>
+}
+<input type="text" name="answer" @bind-value="UserAnswer" />
+<button type="submit" @onclick="@(() => SubmitAnswer(UserAnswer))">Submit Answer</button>
+
+@code {
+
+    [Parameter]
+    public string GameID { get; set; }
+    private string PlayerID { get; set; }
+    private Game GameModel { get; set; }
+    public string UserAnswer { get; set; }
+    HubConnection connection;
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (connection == null)
+        {
+            connection = new HubConnectionBuilder()
+                .WithUrl($"{NavManager.BaseUri}gamehub")
+                .Build();
+            await connection.StartAsync();
+            await connection.InvokeAsync("JoinGroup", GameID);
+            connection.On<Game>("GameUpdate", Update);
+        }
+    }
+
+    public async Task Update(Game gameModel)
+    {
+        await connection.InvokeAsync("GameUpdate", gameModel);
+        StateHasChanged();
+    }
+
+    public async Task SubmitAnswer(string answer)
+    {
+        GameModel = await GameService.SubmitAnswer(PlayerID, answer);
+        await connection.InvokeAsync("SubmitAnswer", GameModel);
+    }
+
+}

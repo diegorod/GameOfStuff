@@ -3,25 +3,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
+using GameOfStuff.Data;
 
 namespace GameOfStuff
 {
     public class GameHub : Hub
     {
-        public void SubmitAnswer(GameModel gameModel)
+        private readonly GameService _gs;
+        public GameHub(GameService gs)
         {
-            Clients.Group(gameModel.SessionID).SendAsync("AddAnswer", gameModel.Answer);
+            _gs = gs;
+        }
+
+        public void UpdatePlayers(Game gameModel)
+        {
+            Clients.Group(gameModel.GameID).SendAsync("GameUpdate", gameModel);
         }
 
         public void JoinGroup(string groupName)
         {
             Groups.AddToGroupAsync(Context.ConnectionId, groupName);
         }
-    }
-
-    public class GameModel
-    {
-        public string SessionID { get; set; }
-        public string Answer { get; set; }
     }
 }

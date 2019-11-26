@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.EntityFrameworkCore;
 using GameOfStuff.Data;
 
 namespace GameOfStuff
@@ -28,8 +29,8 @@ namespace GameOfStuff
         {
             services.AddRazorPages();
             services.AddServerSideBlazor();
-            services.AddSingleton<WeatherForecastService>();
-            services.AddHttpContextAccessor();
+            services.AddDbContext<GameDbContext>(options => options.UseInMemoryDatabase(databaseName: "GameOfStuff"));
+            services.AddSingleton<GameState>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

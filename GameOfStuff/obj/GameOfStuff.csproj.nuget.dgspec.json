@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\doriandrake\\Source\\Repos\\GameOfStuff\\GameOfStuff\\GameOfStuff.csproj": {}
+    "C:\\Users\\doriandrake\\source\\repos\\GameOfStuff\\GameOfStuff\\GameOfStuff.csproj": {}
   },
   "projects": {
-    "C:\\Users\\doriandrake\\Source\\Repos\\GameOfStuff\\GameOfStuff\\GameOfStuff.csproj": {
+    "C:\\Users\\doriandrake\\source\\repos\\GameOfStuff\\GameOfStuff\\GameOfStuff.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\doriandrake\\Source\\Repos\\GameOfStuff\\GameOfStuff\\GameOfStuff.csproj",
+        "projectUniqueName": "C:\\Users\\doriandrake\\source\\repos\\GameOfStuff\\GameOfStuff\\GameOfStuff.csproj",
         "projectName": "GameOfStuff",
-        "projectPath": "C:\\Users\\doriandrake\\Source\\Repos\\GameOfStuff\\GameOfStuff\\GameOfStuff.csproj",
+        "projectPath": "C:\\Users\\doriandrake\\source\\repos\\GameOfStuff\\GameOfStuff\\GameOfStuff.csproj",
         "packagesPath": "C:\\Users\\doriandrake\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\doriandrake\\Source\\Repos\\GameOfStuff\\GameOfStuff\\obj\\",
+        "outputPath": "C:\\Users\\doriandrake\\source\\repos\\GameOfStuff\\GameOfStuff\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"
@@ -44,6 +44,20 @@
             "Microsoft.AspNetCore.SignalR.Client": {
               "target": "Package",
               "version": "[3.0.0, )"
+            },
+            "Microsoft.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[3.0.1, )"
+            },
+            "Microsoft.EntityFrameworkCore.InMemory": {
+              "target": "Package",
+              "version": "[3.0.1, )"
+            },
+            "Microsoft.EntityFrameworkCore.Tools": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[3.0.1, )"
             }
           },
           "imports": [
