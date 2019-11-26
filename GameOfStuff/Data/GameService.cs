@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -23,18 +24,21 @@ namespace GameOfStuff.Data
                 .FirstOrDefaultAsync(g => g.GameID == gameID);
         }
 
-        private string GetRandomQuestion()
+        private async Task<string> GetRandomQuestion()
         {
-            string question = "";
-            //TODO get random question from flatfile
-            return question;
+            var questions = await _db.Questions.ToListAsync();
+            var r = new Random();
+            var rIndex = r.Next(1, questions.Count());
+            return questions[rIndex].Text;
         }
+
         public async Task<Game> NewGame(string gameName, string password)
         {
             Game newGame = new Game()
             {
                 GameID = gameName,
-                Password = password
+                Password = password,
+                Question = await GetRandomQuestion()
             };
 
             //Check if game name is unique
@@ -54,14 +58,14 @@ namespace GameOfStuff.Data
             }
         }
 
-        public async Task<Game> SubmitAnswer(string userID, string answer)
+        public async Task<Game> SubmitAnswer(string gameID, string playerID, string answer)
         {
-            var player = _db.Players.Find(userID);
+            var player = await _db.Players.FindAsync(playerID, gameID);
 
             try
             {
                 player.Answer = answer;
-                _db.Update(answer);
+                _db.Update(player);
                 await _db.SaveChangesAsync();
                 return await GetGameModel(player.GameID);
             }
@@ -78,9 +82,9 @@ namespace GameOfStuff.Data
             return !game.Players.Any(p => p.Answer == string.Empty);
         }
 
-        public async Task<Game> AnswerGuessed(string userID)
+        public async Task<Game> AnswerGuessed(string gameID, string playerID)
         {
-            var player = _db.Players.Find(userID);
+            var player = await _db.Players.FindAsync(playerID, gameID);
             try
             {
                 player.IsOut = true;
@@ -94,9 +98,9 @@ namespace GameOfStuff.Data
             }
         }
 
-        public async Task<Game> AnswerReset(string userID)
+        public async Task<Game> AnswerReset(string gameID, string playerID)
         {
-            var player = _db.Players.Find(userID);
+            var player = await _db.Players.FindAsync(playerID, gameID);
             try
             {
                 player.IsOut = false;
@@ -110,15 +114,15 @@ namespace GameOfStuff.Data
             }
         }
 
-        public async Task<Game> JoinGame(string gameID, string password, string user)
+        public async Task<Game> JoinGame(string gameID, string password, string playerID)
         {
-            var game = _db.Games.Find(gameID);
-            if(game != null)
+            var game = await _db.Games.FindAsync(gameID);
+            if(game == null)
             {
                 throw new Exception($@"GameID: {gameID} doesn't exist.");
             }
 
-            if (game.Password == password)
+            if (game.Password != password)
             {
                 throw new Exception($@"Incorrect password.");
             }
@@ -128,7 +132,7 @@ namespace GameOfStuff.Data
                 Player player = new Player
                 {
                     GameID = gameID,
-                    PlayerID = user,
+                    PlayerID = playerID,
                     IsOut = false
                 };
                 _db.Players.Add(player);
@@ -142,7 +146,7 @@ namespace GameOfStuff.Data
             }
         }
 
-        public async Task<Game> ResetGame(string gameID)
+        public async Task<Game> NewRound(string gameID)
         {
             var players = _db.Players.Where(x => x.GameID == gameID).ToList();
             if (players != null)
@@ -155,7 +159,13 @@ namespace GameOfStuff.Data
                 }
                 await _db.SaveChangesAsync();
             }
-            return await GetGameModel(gameID);
+
+            var game = await _db.Games.FindAsync(gameID);
+            game.Question = await GetRandomQuestion();
+            _db.Update(game);
+            await _db.SaveChangesAsync();
+
+            return game;
         }
     }
 }

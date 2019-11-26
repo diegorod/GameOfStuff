@@ -15,9 +15,9 @@ namespace GameOfStuff
             _gs = gs;
         }
 
-        public void UpdatePlayers(Game gameModel)
+        public async Task UpdatePlayers(string gameId)
         {
-            Clients.Group(gameModel.GameID).SendAsync("GameUpdate", gameModel);
+            await Clients.GroupExcept(gameId, Context.ConnectionId).SendAsync("GameUpdate");
         }
 
         public void JoinGroup(string groupName)

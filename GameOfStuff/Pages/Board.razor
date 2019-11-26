@@ -1,49 +1,134 @@
-﻿@page "/board/{GameID}";
-@using Microsoft.AspNetCore.SignalR.Client;
-@using GameOfStuff.Data;
+﻿@page "/board/{GameID}"
+@using Microsoft.AspNetCore.SignalR.Client
+@using GameOfStuff.Data
 @inject NavigationManager NavManager
 @inject GameService GameService
 
-<h3>Game</h3>
-@foreach (Player player in GameModel.Players)
+<h3><strong>Group Name: </strong>@GameID</h3>
+@if (!string.IsNullOrEmpty(Validation))
 {
-    <p>@player.Answer</p>
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        @Validation
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="(() => Validation = string.Empty)">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
 }
-<input type="text" name="answer" @bind-value="UserAnswer" />
-<button type="submit" @onclick="@(() => SubmitAnswer(UserAnswer))">Submit Answer</button>
+@if (Loaded)
+{
+    @if (LoggedIn)
+    {
+        <h4>Question: <strong>@GameModel.Question</strong></h4>
+        @if (GameModel?.Players != null)
+        {
+            <h3>Answers</h3>
+
+            @foreach (Player player in GameModel.Players)
+            {
+                if (!string.IsNullOrEmpty(player.Answer) && !player.IsOut)
+                {
+                    <button type="button" class="btn btn-success btn-lg btn-block">@player.Answer</button>
+                }
+            }
+        }
+        <input type="text" name="answer" @bind-value="UserAnswer" />
+        <button type="submit" @onclick="@(() => SubmitAnswer())">Submit Answer</button>
+    }
+    else
+    {
+        <label for="PlayerID">Please enter your name</label>
+        <input type="text" name="PlayerID" @bind-value="PlayerID" />
+        <label for="Password">Please enter password to join game</label>
+        <input type="text" name="Password" @bind-value="Password" />
+        <button type="submit" @onclick="@(() => JoinGame())">Join Game</button>
+    }
+
+}
 
 @code {
 
     [Parameter]
     public string GameID { get; set; }
+    private bool Loaded { get; set; } = false;
     private string PlayerID { get; set; }
+    private string Password { get; set; }
     private Game GameModel { get; set; }
-    public string UserAnswer { get; set; }
+    private string UserAnswer { get; set; }
+    private bool LoggedIn { get; set; } = false;
+    private bool RevealAnswers { get; set; }
+    public string Validation { get; set; }
+
     HubConnection connection;
 
     protected async override Task OnInitializedAsync()
     {
+        await UpdateBoard();
+
         if (connection == null)
         {
             connection = new HubConnectionBuilder()
                 .WithUrl($"{NavManager.BaseUri}gamehub")
+                .WithAutomaticReconnect()
                 .Build();
+
+            connection.On("GameUpdate", UpdateBoard);
+
             await connection.StartAsync();
-            await connection.InvokeAsync("JoinGroup", GameID);
-            connection.On<Game>("GameUpdate", Update);
         }
+
     }
 
-    public async Task Update(Game gameModel)
+    public async Task JoinGame()
     {
-        await connection.InvokeAsync("GameUpdate", gameModel);
+        if (string.IsNullOrEmpty(PlayerID))
+        {
+            Validation = "Please enter a username";
+            return;
+        }
+        try
+        {
+            GameModel = await GameService.JoinGame(GameID, Password, PlayerID);
+            LoggedIn = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Validation = ex.Message;
+            return;
+        }
+        await connection.InvokeAsync("JoinGroup", GameID);
+    }
+
+    public async Task UpdateBoard()
+    {
+        GameModel = await GameService.GetGameModel(GameID);
+        if (GameModel == null)
+        {
+            Loaded = false;
+        }
+        else
+        {
+            RevealAnswers = GameService.RevealAnswers(GameModel.GameID);
+            Loaded = true;
+        }
+
         StateHasChanged();
     }
 
-    public async Task SubmitAnswer(string answer)
+    public async Task SubmitAnswer()
     {
-        GameModel = await GameService.SubmitAnswer(PlayerID, answer);
-        await connection.InvokeAsync("SubmitAnswer", GameModel);
+        try
+        {
+            GameModel = await GameService.SubmitAnswer(GameID, PlayerID, UserAnswer);
+            await connection.InvokeAsync("UpdatePlayers", GameModel.GameID);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Validation = ex.Message;
+            return;
+        }
+
     }
 
 }

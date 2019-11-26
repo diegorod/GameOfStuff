@@ -30,7 +30,7 @@ namespace GameOfStuff
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddDbContext<GameDbContext>(options => options.UseInMemoryDatabase(databaseName: "GameOfStuff"));
-            services.AddSingleton<GameState>();
+            services.AddScoped<GameService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
