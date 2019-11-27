@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using GameOfStuff.Data;
+using GameOfStuff.Services;
 
 namespace GameOfStuff
 {
@@ -31,6 +32,7 @@ namespace GameOfStuff
             services.AddServerSideBlazor();
             services.AddDbContext<GameDbContext>(options => options.UseInMemoryDatabase(databaseName: "GameOfStuff"));
             services.AddScoped<GameService>();
+            services.AddScoped<AppState>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

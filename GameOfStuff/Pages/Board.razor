@@ -1,46 +1,94 @@
 ﻿@page "/board/{GameID}"
 @using Microsoft.AspNetCore.SignalR.Client
+@using GameOfStuff.Services
 @using GameOfStuff.Data
 @inject NavigationManager NavManager
 @inject GameService GameService
+@inject AppState AppState
 
-<h3><strong>Group Name: </strong>@GameID</h3>
-@if (!string.IsNullOrEmpty(Validation))
-{
-    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-        @Validation
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="(() => Validation = string.Empty)">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    </div>
-}
+<h3>Session Name: <strong>@GameModel.GameID</strong></h3>
+<ExeceptionMessage />
 @if (Loaded)
 {
     @if (LoggedIn)
     {
-        <h4>Question: <strong>@GameModel.Question</strong></h4>
+        <div class="card" id="QuestionCard">
+            <div class="card-header">
+                Question
+            </div>
+            <div class="card-body">
+                <blockquote class="blockquote mb-0">
+                    <p>@GameModel.Question</p>
+                </blockquote>
+            </div>
+        </div>
         @if (GameModel?.Players != null)
         {
-            <h3>Answers</h3>
-
-            @foreach (Player player in GameModel.Players)
-            {
-                if (!string.IsNullOrEmpty(player.Answer) && !player.IsOut)
-                {
-                    <button type="button" class="btn btn-success btn-lg btn-block">@player.Answer</button>
-                }
-            }
+            <div class="card mt-3" id="AnswerCard">
+                <div class="card-header">
+                    Answers
+                </div>
+                <ul class="list-group list-group-flush">
+                    @if (!GameModel.Players.Any(p => p.Answer != string.Empty))
+                    {
+                        <li>No answers submitted yet. Please submit an answer below.</li>
+                    }
+                    else
+                    {
+                        if (RevealAnswers)
+                        {
+                            foreach (Player player in GameModel.Players)
+                            {
+                                if (!string.IsNullOrEmpty(player.Answer))
+                                {
+                                    <li class="list-group-item text-white @(player.IsOut ? "bg-danger" : "bg-success")" @onclick="(() => HandlePlayerClick(player.PlayerID))">
+                                        @player.Answer
+                                    </li>
+                                }
+                            }
+                        }
+                        else
+                        {
+                            <li>Waiting for all players(@GameModel.Players.Count) to submit answers.</li>
+                        }
+                    }
+                </ul>
+            </div>
         }
-        <input type="text" name="answer" @bind-value="UserAnswer" />
-        <button type="submit" @onclick="@(() => SubmitAnswer())">Submit Answer</button>
+        <div class="card mt-3">
+            <div class="card-header">
+                Submit an answer
+            </div>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <input type="text" name="answer" class="form-control" @bind-value="UserAnswer" placeholder="Write an answer..." />
+                    </div>
+                    <div class="form-group col-md-6">
+                        <button type="submit" class="btn btn-primary" @onclick="@(() => SubmitAnswer())">Submit Answer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
     else
     {
-        <label for="PlayerID">Please enter your name</label>
-        <input type="text" name="PlayerID" @bind-value="PlayerID" />
-        <label for="Password">Please enter password to join game</label>
-        <input type="text" name="Password" @bind-value="Password" />
-        <button type="submit" @onclick="@(() => JoinGame())">Join Game</button>
+        <div class="card mt-3">
+            <div class="card-header">
+                Please login
+            </div>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <input type="text" name="PlayerID" class="form-control" @bind-value="PlayerID" placeholder="Please enter your name..." />
+                    </div>
+                    <div class="form-group col-md-6">
+                        <input type="password" name="Password" class="form-control" @bind-value="Password" placeholder="Please enter password to join game..." />
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" @onclick="@(() => JoinGame())">Join Game</button>
+            </div>
+        </div>
     }
 
 }
@@ -55,7 +103,7 @@
     private Game GameModel { get; set; }
     private string UserAnswer { get; set; }
     private bool LoggedIn { get; set; } = false;
-    private bool RevealAnswers { get; set; }
+    private bool RevealAnswers { get; set; } = false;
     public string Validation { get; set; }
 
     HubConnection connection;
@@ -89,12 +137,10 @@
         {
             GameModel = await GameService.JoinGame(GameID, Password, PlayerID);
             LoggedIn = true;
-            StateHasChanged();
         }
         catch (Exception ex)
         {
-            Validation = ex.Message;
-            return;
+            AppState.ExceptionAlert("Error", ex.Message, true);
         }
         await connection.InvokeAsync("JoinGroup", GameID);
     }
@@ -108,7 +154,7 @@
         }
         else
         {
-            RevealAnswers = GameService.RevealAnswers(GameModel.GameID);
+            RevealAnswers = GameService.RevealAnswers(GameModel);
             Loaded = true;
         }
 
@@ -120,15 +166,32 @@
         try
         {
             GameModel = await GameService.SubmitAnswer(GameID, PlayerID, UserAnswer);
-            await connection.InvokeAsync("UpdatePlayers", GameModel.GameID);
-            StateHasChanged();
+            await UpdatePlayers();
         }
         catch (Exception ex)
         {
-            Validation = ex.Message;
-            return;
+            AppState.ExceptionAlert("Error", ex.Message, true);
         }
 
+    }
+
+    public async Task UpdatePlayers()
+    {
+        await connection.InvokeAsync("UpdatePlayers", GameModel.GameID);
+        StateHasChanged();
+    }
+
+    public async Task HandlePlayerClick(string playerID)
+    {
+        try
+        {
+            GameModel = await GameService.AnswerToggle(GameModel.GameID, playerID);
+            await UpdatePlayers();
+        }
+        catch (Exception ex)
+        {
+            AppState.ExceptionAlert("Error", ex.Message, true);
+        }
     }
 
 }

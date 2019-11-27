@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
-using GameOfStuff.Data;
+using GameOfStuff.Services;
 
 namespace GameOfStuff
 {
@@ -20,9 +20,10 @@ namespace GameOfStuff
             await Clients.GroupExcept(gameId, Context.ConnectionId).SendAsync("GameUpdate");
         }
 
-        public void JoinGroup(string groupName)
+        public async Task JoinGroup(string groupName)
         {
-            Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+            await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+            await Clients.Group(groupName).SendAsync("GameUpdate");
         }
     }
 }

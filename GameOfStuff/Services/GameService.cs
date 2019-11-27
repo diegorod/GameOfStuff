@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using GameOfStuff.Data;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace GameOfStuff.Data
+namespace GameOfStuff.Services
 {
     public class GameService
     {
@@ -76,18 +77,17 @@ namespace GameOfStuff.Data
 
         }
 
-        public bool RevealAnswers(string gameID)
+        public bool RevealAnswers(Game game)
         {
-            var game = GetGameModel(gameID).Result;
             return !game.Players.Any(p => p.Answer == string.Empty);
         }
 
-        public async Task<Game> AnswerGuessed(string gameID, string playerID)
+        public async Task<Game> AnswerToggle(string gameID, string playerID)
         {
             var player = await _db.Players.FindAsync(playerID, gameID);
             try
             {
-                player.IsOut = true;
+                player.IsOut = !player.IsOut;
                 _db.Update(player);
                 await _db.SaveChangesAsync();
                 return await GetGameModel(player.GameID);
@@ -129,6 +129,9 @@ namespace GameOfStuff.Data
 
             try
             {
+                //TODO:
+                //Check if it is a returning player
+
                 Player player = new Player
                 {
                     GameID = gameID,

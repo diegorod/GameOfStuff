@@ -42,7 +42,6 @@ namespace GameOfStuff.Data
 
         public string Question { get; set; }
 
-        [Required]
         [StringLength(30, ErrorMessage = "Password is too long.")]
         [RegularExpression(@"^\S*$", ErrorMessage = "No spaces allowed")]
         public string Password { get; set; }

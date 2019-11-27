@@ -1,11 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using GameOfStuff.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace GameOfStuff.Data
+namespace GameOfStuff.Services
 {
     public class QuestionSeeder
     {
@@ -253,7 +254,7 @@ new Question { QuestionID = 231, Text = "Stuff that are naughty" },
 new Question { QuestionID = 232, Text = "Stuff that make you go ooooh" },
 new Question { QuestionID = 233, Text = "Stuff that really need a referee" },
 new Question { QuestionID = 234, Text = "Stuff you shouldn't put on the kitchen table" },
-new Question { QuestionID = 235, Text = "Stuff you shouldnâ€™t do in a hospital" },
+new Question { QuestionID = 235, Text = "Stuff you shouldn't do in a hospital" },
 new Question { QuestionID = 236, Text = "Stuff you shouldn't say to a police officer" },
 new Question { QuestionID = 237, Text = "Stuff you shouldn't lick" },
 new Question { QuestionID = 238, Text = "Stuff you would do if you changed genders for a day" },
@@ -282,7 +283,7 @@ new Question { QuestionID = 260, Text = "Stuff you shouldn't do at the beach" },
 new Question { QuestionID = 261, Text = "Stuff people like about you" },
 new Question { QuestionID = 262, Text = "Stuff you shouldn't say to your doctor" },
 new Question { QuestionID = 263, Text = "Stuff that confirm you are losing your mind" },
-new Question { QuestionID = 264, Text = "Stuff that donâ€™t last very long" },
+new Question { QuestionID = 264, Text = "Stuff that doesn't last very long" },
 new Question { QuestionID = 265, Text = "Stuff you didn't realize until it was too late" },
 new Question { QuestionID = 266, Text = "Stuff that confirm you have had too much to drink" },
 new Question { QuestionID = 267, Text = "Stuff you keep hidden" },
@@ -394,7 +395,7 @@ new Question { QuestionID = 372, Text = "Stuff you would like to do with chocola
 new Question { QuestionID = 373, Text = "Stuff you shouldn't say to break the silence in a conversation" },
 new Question { QuestionID = 374, Text = "Stuff you would do with a million dollars" },
 new Question { QuestionID = 375, Text = "Stuff you wish you could buy out of vending machines" },
-new Question { QuestionID = 376, Text = "Stuff you shouldnâ€™t do at a job interview" },
+new Question { QuestionID = 376, Text = "Stuff you shouldn't do at a job interview" },
 new Question { QuestionID = 377, Text = "Stuff you shouldn't accept from strangers" },
 new Question { QuestionID = 378, Text = "Stuff you shouldn't do quickly" }
                     );

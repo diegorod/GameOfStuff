@@ -1,18 +1,12 @@
 ﻿@page "/newgame"
+@using GameOfStuff.Services
 @using GameOfStuff.Data
 @inject NavigationManager NavManager
 @inject GameService GameService
+@inject AppState AppState
 
 <h3>Create a new session</h3>
-@if (!string.IsNullOrEmpty(Validation))
-{
-    <div class="alert alert-warning alert-dismissible fade show" role="alert">
-        @Validation
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="(() => Validation = string.Empty)">
-            <span aria-hidden="true">&times;</span>
-        </button>
-    </div>
-}
+<ExeceptionMessage />
 <EditForm Model="@GameModel" OnValidSubmit="@CreateNewGame">
     <DataAnnotationsValidator />
     <ValidationSummary />
@@ -21,15 +15,13 @@
             <InputText id="GameID" @bind-Value="GameModel.GameID" class="form-control" placeholder="Session Name" />
         </div>
         <div class="form-group col-md-6">
-            <InputText id="Password" @bind-Value="GameModel.Password" class="form-control" placeholder="Password" />
+            <InputText type="password" id="Password" @bind-Value="GameModel.Password" class="form-control" placeholder="Password" />
         </div>
     </div>
     <button type="submit" class="btn btn-primary">Create</button>
 </EditForm>
-
 @code {
     public Game GameModel { get; set; } = new Game();
-    public string Validation { get; set; }
 
     public async Task CreateNewGame()
     {
@@ -41,8 +33,7 @@
         }
         catch (Exception ex)
         {
-            Validation = ex.Message;
-            return;
+            AppState.ExceptionAlert("Error", ex.Message, true);
         }
     }
 
