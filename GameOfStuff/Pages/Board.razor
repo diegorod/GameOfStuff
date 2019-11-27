@@ -29,28 +29,25 @@
                     Answers
                 </div>
                 <ul class="list-group list-group-flush">
-                    @if (!GameModel.Players.Any(p => p.Answer != string.Empty))
+                    @if (string.IsNullOrEmpty(GameModel.Players.Where(p => p.PlayerID == PlayerID).FirstOrDefault().Answer))
                     {
-                        <li>No answers submitted yet. Please submit an answer below.</li>
+                        <li class="list-group-item bg-warning">You have not submitted an answer yet. Please submit an answer below.</li>
+                    }
+                    @if (RevealAnswers)
+                    {
+                        foreach (Player player in GameModel.Players.OrderBy(p => p.Answer))
+                        {
+                            if (!string.IsNullOrEmpty(player.Answer))
+                            {
+                                <li class="list-group-item text-white @(player.IsOut ? "bg-danger" : "bg-success")" @onclick="(() => HandlePlayerClick(player.PlayerID))">
+                                    @player.Answer
+                                </li>
+                            }
+                        }
                     }
                     else
                     {
-                        if (RevealAnswers)
-                        {
-                            foreach (Player player in GameModel.Players)
-                            {
-                                if (!string.IsNullOrEmpty(player.Answer))
-                                {
-                                    <li class="list-group-item text-white @(player.IsOut ? "bg-danger" : "bg-success")" @onclick="(() => HandlePlayerClick(player.PlayerID))">
-                                        @player.Answer
-                                    </li>
-                                }
-                            }
-                        }
-                        else
-                        {
-                            <li>Waiting for all players(@GameModel.Players.Count) to submit answers.</li>
-                        }
+                        <li class="list-group-item bg-warning">Waiting for all @GameModel.Players.Count player@(GameModel.Players.Count>1 ? "s" : "") to submit answers.</li>
                     }
                 </ul>
             </div>
@@ -104,7 +101,6 @@
     private string UserAnswer { get; set; }
     private bool LoggedIn { get; set; } = false;
     private bool RevealAnswers { get; set; } = false;
-    public string Validation { get; set; }
 
     HubConnection connection;
 
@@ -130,19 +126,20 @@
     {
         if (string.IsNullOrEmpty(PlayerID))
         {
-            Validation = "Please enter a username";
+            AppState.ExceptionAlert("Error", "Please enter a player name", true);
             return;
         }
         try
         {
             GameModel = await GameService.JoinGame(GameID, Password, PlayerID);
             LoggedIn = true;
+            await connection.InvokeAsync("JoinGroup", GameID);
+            await UpdatePlayers();
         }
         catch (Exception ex)
         {
             AppState.ExceptionAlert("Error", ex.Message, true);
         }
-        await connection.InvokeAsync("JoinGroup", GameID);
     }
 
     public async Task UpdateBoard()

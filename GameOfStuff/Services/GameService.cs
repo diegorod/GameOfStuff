@@ -79,7 +79,11 @@ namespace GameOfStuff.Services
 
         public bool RevealAnswers(Game game)
         {
-            return !game.Players.Any(p => p.Answer == string.Empty);
+            if(game.Players.Count == 0)
+            {
+                return false;
+            }
+            return !game.Players.Any(p => string.IsNullOrEmpty(p.Answer));
         }
 
         public async Task<Game> AnswerToggle(string gameID, string playerID)

@@ -17,13 +17,12 @@ namespace GameOfStuff
 
         public async Task UpdatePlayers(string gameId)
         {
-            await Clients.GroupExcept(gameId, Context.ConnectionId).SendAsync("GameUpdate");
+            await Clients.Group(gameId).SendAsync("GameUpdate");
         }
 
         public async Task JoinGroup(string groupName)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
-            await Clients.Group(groupName).SendAsync("GameUpdate");
         }
     }
 }
