@@ -40,7 +40,7 @@
                             if (!string.IsNullOrEmpty(player.Answer))
                             {
                                 <li class="list-group-item text-white @(player.IsOut ? "bg-danger" : "bg-success")" @onclick="(() => HandlePlayerClick(player.PlayerID, player.Answer))">
-                                    @player.PlayerID - @player.Answer
+                                    @(player.IsOut ? $"{player.PlayerID} - " : "") @player.Answer
                                 </li>
                             }
                         }
