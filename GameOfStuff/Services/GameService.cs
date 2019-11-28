@@ -138,8 +138,12 @@ namespace GameOfStuff.Services
 
             try
             {
-
-                var player = new Player
+                var player = await _db.Players.FindAsync(playerID, gameID);
+                if(player != null)
+                {
+                    return game;
+                }
+                player = new Player
                 {
                     GameID = gameID,
                     PlayerID = playerID,
