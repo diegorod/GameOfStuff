@@ -62,6 +62,8 @@ namespace GameOfStuff.Data
         [RegularExpression(@"^\S*$", ErrorMessage = "No spaces allowed")]
         public string PlayerID { get; set; }
 
+        public string ConnectionID { get; set; }
+
         [StringLength(140, ErrorMessage = "Answer is too long.")]
         public string Answer { get; set; }
 

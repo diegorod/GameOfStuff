@@ -1,0 +1,26 @@
+﻿@using GameOfStuff.Services
+@inject AppState AppState
+@implements IDisposable
+<div class="alert alert-warning alert-dismissible fade @(AppState.AlertShow ? "show" : "")" style="display: @(AppState.AlertShow ? "block" : "none")" role="alert">
+    @AppState.AlertBody
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close" @onclick="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+@code {
+
+    protected override void OnInitialized()
+    {
+        AppState.OnAlertChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        AppState.OnAlertChange -= StateHasChanged;
+    }
+
+    private void Close()
+    {
+        AppState.ClearException();
+    }
+}

@@ -7,26 +7,26 @@ namespace GameOfStuff.Services
 {
     public class AppState
     {
-        public string ExceptionBody { get; set; }
-        public bool ExceptionShow { get; set; } = false;
+        public string AlertBody { get; set; }
+        public bool AlertShow { get; set; } = false;
 
-        public event Action OnExceptionChange;
+        public event Action OnAlertChange;
 
         public void ExceptionAlert(string title, string body, bool show)
         {
-            ExceptionBody = body;
-            ExceptionShow = show;
+            AlertBody = body;
+            AlertShow = show;
             NotifyStateChanged();
         }
 
         public void ClearException()
         {
-            ExceptionBody = null;
-            ExceptionShow = false;
+            AlertBody = null;
+            AlertShow = false;
             NotifyStateChanged();
         }
 
-        private void NotifyStateChanged() => OnExceptionChange?.Invoke();
+        private void NotifyStateChanged() => OnAlertChange?.Invoke();
 
     }
 }

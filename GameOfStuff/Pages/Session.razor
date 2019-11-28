@@ -1,20 +1,20 @@
-﻿@page "/board/{GameID}"
+﻿@page "/session/{GameID}"
 @using Microsoft.AspNetCore.SignalR.Client
-@using GameOfStuff.Services
-@using GameOfStuff.Data
 @inject NavigationManager NavManager
 @inject GameService GameService
 @inject AppState AppState
+@inject IJSRuntime JSRuntime
 
 <h3>Session Name: <strong>@GameModel.GameID</strong></h3>
-<ExeceptionMessage />
+<Alert />
 @if (Loaded)
 {
     @if (LoggedIn)
     {
         <div class="card" id="QuestionCard">
-            <div class="card-header">
-                Question
+            <div class="card-header" style="display: flex">
+                <div class="col-md-6 text-left">Question</div>
+                <div class="col-md-6 text-right"><span class="oi oi-reload" title="Reset session" @onclick="NewGame"></span></div>
             </div>
             <div class="card-body">
                 <blockquote class="blockquote mb-0">
@@ -39,15 +39,15 @@
                         {
                             if (!string.IsNullOrEmpty(player.Answer))
                             {
-                                <li class="list-group-item text-white @(player.IsOut ? "bg-danger" : "bg-success")" @onclick="(() => HandlePlayerClick(player.PlayerID))">
-                                    @player.Answer
+                                <li class="list-group-item text-white @(player.IsOut ? "bg-danger" : "bg-success")" @onclick="(() => HandlePlayerClick(player.PlayerID, player.Answer))">
+                                    @player.PlayerID - @player.Answer
                                 </li>
                             }
                         }
                     }
                     else
                     {
-                        <li class="list-group-item bg-warning">Waiting for all @GameModel.Players.Count player@(GameModel.Players.Count>1 ? "s" : "") to submit answers.</li>
+                        <li class="list-group-item bg-warning">Waiting for all @GameModel.Players.Count player@(GameModel.Players.Count > 1 ? "s" : "") to submit answers.</li>
                     }
                 </ul>
             </div>
@@ -62,7 +62,7 @@
                         <input type="text" name="answer" class="form-control" @bind-value="UserAnswer" placeholder="Write an answer..." />
                     </div>
                     <div class="form-group col-md-6">
-                        <button type="submit" class="btn btn-primary" @onclick="@(() => SubmitAnswer())">Submit Answer</button>
+                        <button type="submit" class="btn btn-primary" @onclick="SubmitAnswer">Submit Answer</button>
                     </div>
                 </div>
             </div>
@@ -83,7 +83,7 @@
                         <input type="password" name="Password" class="form-control" @bind-value="Password" placeholder="Please enter password to join game..." />
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary" @onclick="@(() => JoinGame())">Join Game</button>
+                <button type="submit" class="btn btn-primary" @onclick="@JoinGame">Join Game</button>
             </div>
         </div>
     }
@@ -131,7 +131,7 @@
         }
         try
         {
-            GameModel = await GameService.JoinGame(GameID, Password, PlayerID);
+            GameModel = await GameService.JoinGame(GameID, Password, PlayerID, connection.ConnectionId);
             LoggedIn = true;
             await connection.InvokeAsync("JoinGroup", GameID);
             await UpdatePlayers();
@@ -178,8 +178,12 @@
         StateHasChanged();
     }
 
-    public async Task HandlePlayerClick(string playerID)
+    public async Task HandlePlayerClick(string playerID, string answer)
     {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Confirm '{answer}' has been guessed."))
+        {
+            return;
+        }
         try
         {
             GameModel = await GameService.AnswerToggle(GameModel.GameID, playerID);
@@ -187,7 +191,25 @@
         }
         catch (Exception ex)
         {
-            AppState.ExceptionAlert("Error", ex.Message, true);
+            AppState.ExceptionAlert("Error Handling Player Click", ex.Message, true);
+        }
+    }
+
+    public async Task NewGame()
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to start new session with new question ?"))
+        {
+            return;
+        }
+
+        try
+        {
+            GameModel = await GameService.NewRound(GameModel.GameID);
+            await UpdatePlayers();
+        }
+        catch (Exception ex)
+        {
+            AppState.ExceptionAlert("Error Resetting Game", ex.Message, true);
         }
     }
 

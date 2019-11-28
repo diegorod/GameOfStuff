@@ -1,11 +1,11 @@
-﻿@page "/newsession"
+﻿@page "/joinsession"
 @inject NavigationManager NavManager
-@inject GameService GameService
 @inject AppState AppState
+@inject GameService GameService
 
-<h3>Create a new session</h3>
+<h3>Join a session</h3>
 <Alert />
-<EditForm Model="GameModel" OnValidSubmit="CreateNewGame">
+<EditForm Model="GameModel" OnValidSubmit="Search">
     <DataAnnotationsValidator />
     <ValidationSummary />
     <div class="form-row">
@@ -16,17 +16,18 @@
             <InputText type="password" id="Password" @bind-Value="GameModel.Password" class="form-control" placeholder="Password" />
         </div>
     </div>
-    <button type="submit" class="btn btn-primary">Create</button>
+    <button type="submit" class="btn btn-primary">Join Game</button>
 </EditForm>
 @code {
+
     public Game GameModel { get; set; } = new Game();
+    public string SearchQuery { get; set; }
 
-    public async Task CreateNewGame()
+    private async Task Search()
     {
-
         try
         {
-            GameModel = await GameService.NewGame(GameModel.GameID, GameModel.Password);
+            GameModel = await GameService.GetGameModel(GameModel.GameID);
             NavManager.NavigateTo($"/session/{GameModel.GameID}");
         }
         catch (Exception ex)
@@ -34,5 +35,4 @@
             AppState.ExceptionAlert("Error", ex.Message, true);
         }
     }
-
 }

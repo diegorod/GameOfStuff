@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using GameOfStuff.Services;
+using GameOfStuff.Data;
 
 namespace GameOfStuff
 {
@@ -24,5 +25,16 @@ namespace GameOfStuff
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
         }
+
+        public override async Task OnDisconnectedAsync(Exception exception)
+        {
+            Game game = await _gs.LeaveGame(Context.ConnectionId);
+            if(game != null) //There are still players left
+            {
+                await UpdatePlayers(game.GameID);
+            }
+            await base.OnDisconnectedAsync(exception);
+        }
+
     }
 }

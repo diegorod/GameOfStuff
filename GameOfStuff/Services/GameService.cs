@@ -19,10 +19,15 @@ namespace GameOfStuff.Services
 
         public async Task<Game> GetGameModel(string gameID)
         {
-            return await _db.Games
+            var game = await _db.Games
                 .Include(g => g.Players)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(g => g.GameID == gameID);
+            if(game == null)
+            {
+                throw new Exception($@"Game id '{gameID}' not found.");
+            }
+            return game;
         }
 
         private async Task<string> GetRandomQuestion()
@@ -102,23 +107,23 @@ namespace GameOfStuff.Services
             }
         }
 
-        public async Task<Game> AnswerReset(string gameID, string playerID)
+        public async Task<Game> LeaveGame(string connectionID)
         {
-            var player = await _db.Players.FindAsync(playerID, gameID);
-            try
+            var player = await _db.Players.FirstOrDefaultAsync(p => p.ConnectionID == connectionID);
+            _db.Remove(player);
+            await _db.SaveChangesAsync();
+            var game = await GetGameModel(player.GameID);
+            if (game.Players == null || game.Players.Count == 0)
             {
-                player.IsOut = false;
-                _db.Update(player);
+                //Delete game
+                _db.Remove(game);
                 await _db.SaveChangesAsync();
-                return await GetGameModel(player.GameID);
+                return null;
             }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+            return game;
         }
 
-        public async Task<Game> JoinGame(string gameID, string password, string playerID)
+        public async Task<Game> JoinGame(string gameID, string password, string playerID, string connectionID)
         {
             var game = await _db.Games.FindAsync(gameID);
             if(game == null)
@@ -133,13 +138,12 @@ namespace GameOfStuff.Services
 
             try
             {
-                //TODO:
-                //Check if it is a returning player
 
-                Player player = new Player
+                var player = new Player
                 {
                     GameID = gameID,
                     PlayerID = playerID,
+                    ConnectionID = connectionID,
                     IsOut = false
                 };
                 _db.Players.Add(player);
