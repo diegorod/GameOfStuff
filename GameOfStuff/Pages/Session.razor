@@ -4,7 +4,7 @@
 @inject GameService GameService
 @inject AppState AppState
 @inject IJSRuntime JSRuntime
-
+@implements IDisposable
 <h3>Session Name: <strong>@GameModel.GameID</strong></h3>
 <Alert />
 @if (Loaded)
@@ -14,7 +14,7 @@
         <div class="card" id="QuestionCard">
             <div class="card-header" style="display: flex">
                 <div class="col-md-6 text-left">Question</div>
-                <div class="col-md-6 text-right"><span class="oi oi-reload" title="Reset session" @onclick="NewGame"></span></div>
+                <div class="col-md-6 text-right"><span class="oi oi-reload" title="Reset session" style="cursor: cell;" @onclick="NewGame"></span></div>
             </div>
             <div class="card-body">
                 <blockquote class="blockquote mb-0">
@@ -28,6 +28,12 @@
                 <div class="card-header">
                     Answers
                 </div>
+                @if (GameOver)
+                {
+                <div class="alert alert-info rounded-0" role="alert">
+                    All answers have been guessed. <button type="button" class="btn btn-success" @onclick="NewGame">Start a new game ?</button>
+                </div>
+                }
                 <ul class="list-group list-group-flush">
                     @if (string.IsNullOrEmpty(GameModel.Players.Where(p => p.PlayerID == PlayerID).FirstOrDefault().Answer))
                     {
@@ -39,8 +45,8 @@
                         {
                             if (!string.IsNullOrEmpty(player.Answer))
                             {
-                                <li class="list-group-item text-white @(player.IsOut ? "bg-danger" : "bg-success")" @onclick="(() => HandlePlayerClick(player.PlayerID, player.Answer))">
-                                    @(player.IsOut ? $"{player.PlayerID} - " : "") @player.Answer
+                                <li class="list-group-item text-white @(player.IsOut ? "bg-danger" : "bg-success")" @onclick="(() => HandlePlayerClick(player))">
+                                    @(GameOver ? $"{player.PlayerID} - " : "") @player.Answer
                                 </li>
                             }
                         }
@@ -101,6 +107,7 @@
     private string UserAnswer { get; set; }
     private bool LoggedIn { get; set; } = false;
     private bool RevealAnswers { get; set; } = false;
+    private bool GameOver { get; set; } = false;
 
     HubConnection connection;
 
@@ -152,6 +159,7 @@
         else
         {
             RevealAnswers = GameService.RevealAnswers(GameModel);
+            GameOver = !GameModel.Players.Any(p => p.IsOut == false);
             Loaded = true;
         }
 
@@ -178,15 +186,15 @@
         StateHasChanged();
     }
 
-    public async Task HandlePlayerClick(string playerID, string answer)
+    public async Task HandlePlayerClick(Player player)
     {
-        if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Confirm '{answer}' has been guessed."))
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Confirm '{player.Answer}' has {(player.IsOut ? "not " : "")}been guessed."))
         {
             return;
         }
         try
         {
-            GameModel = await GameService.AnswerToggle(GameModel.GameID, playerID);
+            GameModel = await GameService.AnswerToggle(GameModel.GameID, player.PlayerID);
             await UpdatePlayers();
         }
         catch (Exception ex)
@@ -210,6 +218,14 @@
         catch (Exception ex)
         {
             AppState.ExceptionAlert("Error Resetting Game", ex.Message, true);
+        }
+    }
+
+    public void Dispose()
+    {
+        if(connection != null)
+        {
+            connection.StopAsync();
         }
     }
 

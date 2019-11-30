@@ -141,7 +141,7 @@ namespace GameOfStuff.Services
                 var player = await _db.Players.FindAsync(playerID, gameID);
                 if(player != null)
                 {
-                    return game;
+                    throw new Exception($"Player name '{player.PlayerID}'is already in use. Please try something else.");
                 }
                 player = new Player
                 {
