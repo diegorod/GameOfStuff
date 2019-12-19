@@ -21,6 +21,11 @@
 @code {
     public Game GameModel { get; set; } = new Game();
 
+    protected override void OnInitialized()
+    {
+        AppState.ClearException();
+    }
+
     public async Task CreateNewGame()
     {
 

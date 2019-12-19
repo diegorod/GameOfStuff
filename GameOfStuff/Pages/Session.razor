@@ -1,4 +1,5 @@
 ﻿@page "/session/{GameID}"
+@page "/session"
 @using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager NavManager
 @inject GameService GameService
@@ -7,93 +8,95 @@
 @implements IDisposable
 <h3>Session Name: <strong>@GameModel.GameID</strong></h3>
 <Alert />
-@if (Loaded)
+@if (LoggedIn)
 {
-    @if (LoggedIn)
-    {
-        <div class="card" id="QuestionCard">
-            <div class="card-header" style="display: flex">
-                <div class="col-md-6 text-left">Question</div>
-                <div class="col-md-6 text-right"><span class="oi oi-reload" title="Reset session" style="cursor: cell;" @onclick="NewGame"></span></div>
-            </div>
-            <div class="card-body">
-                <blockquote class="blockquote mb-0">
-                    <p>@GameModel.Question</p>
-                </blockquote>
-            </div>
+    <div class="card" id="QuestionCard">
+        <div class="card-header" style="display: flex">
+            <div class="col-md-6 text-left">Question</div>
+            <div class="col-md-6 text-right"><span class="oi oi-reload" title="Reset session" style="cursor: cell;" @onclick="NewGame"></span></div>
         </div>
-        @if (GameModel?.Players != null)
-        {
-            <div class="card mt-3" id="AnswerCard">
-                <div class="card-header">
-                    Answers
-                </div>
-                @if (GameOver)
-                {
+        <div class="card-body">
+            <blockquote class="blockquote mb-0">
+                <p>@GameModel.Question</p>
+            </blockquote>
+        </div>
+    </div>
+    @if (GameModel?.Players != null)
+    {
+        <div class="card mt-3" id="AnswerCard">
+            <div class="card-header">
+                Answers
+            </div>
+            @if (GameOver)
+            {
                 <div class="alert alert-info rounded-0" role="alert">
                     All answers have been guessed. <button type="button" class="btn btn-success" @onclick="NewGame">Start a new game ?</button>
                 </div>
+            }
+            <ul class="list-group list-group-flush">
+                @if (string.IsNullOrEmpty(GameModel.Players.Where(p => p.PlayerID == PlayerID).FirstOrDefault().Answer))
+                {
+                    <li class="list-group-item bg-warning">You have not submitted an answer yet. Please submit an answer below.</li>
                 }
-                <ul class="list-group list-group-flush">
-                    @if (string.IsNullOrEmpty(GameModel.Players.Where(p => p.PlayerID == PlayerID).FirstOrDefault().Answer))
+                @if (RevealAnswers)
+                {
+                    foreach (Player player in GameModel.Players.OrderBy(p => p.Answer))
                     {
-                        <li class="list-group-item bg-warning">You have not submitted an answer yet. Please submit an answer below.</li>
-                    }
-                    @if (RevealAnswers)
-                    {
-                        foreach (Player player in GameModel.Players.OrderBy(p => p.Answer))
+                        if (!string.IsNullOrEmpty(player.Answer))
                         {
-                            if (!string.IsNullOrEmpty(player.Answer))
-                            {
-                                <li class="list-group-item text-white @(player.IsOut ? "bg-danger" : "bg-success")" @onclick="(() => HandlePlayerClick(player))">
-                                    @(GameOver ? $"{player.PlayerID} - " : "") @player.Answer
-                                </li>
-                            }
+                            <li class="list-group-item text-white @(player.IsOut ? "bg-danger" : "bg-success")" @onclick="(() => HandlePlayerClick(player))">
+                                @(GameOver ? $"{player.PlayerID} - " : "") @player.Answer
+                            </li>
                         }
                     }
-                    else
-                    {
-                        <li class="list-group-item bg-warning">Waiting for all @GameModel.Players.Count player@(GameModel.Players.Count > 1 ? "s" : "") to submit answers.</li>
-                    }
-                </ul>
-            </div>
-        }
-        <div class="card mt-3">
-            <div class="card-header">
-                Submit an answer
-            </div>
-            <div class="card-body">
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <input type="text" name="answer" class="form-control" @bind-value="UserAnswer" placeholder="Write an answer..." />
-                    </div>
-                    <div class="form-group col-md-6">
-                        <button type="submit" class="btn btn-primary" @onclick="SubmitAnswer">Submit Answer</button>
-                    </div>
+                }
+                else
+                {
+                    <li class="list-group-item bg-warning">Waiting for all @GameModel.Players.Count player@(GameModel.Players.Count > 1 ? "s" : "") to submit answers.</li>
+                }
+            </ul>
+        </div>
+    }
+    <div class="card mt-3">
+        <div class="card-header">
+            Submit an answer
+        </div>
+        <div class="card-body">
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <input type="text" name="answer" class="form-control" @bind-value="UserAnswer" placeholder="Write an answer..." />
+                </div>
+                <div class="form-group col-md-6">
+                    <button type="submit" class="btn btn-primary" @onclick="SubmitAnswer">Submit Answer</button>
                 </div>
             </div>
         </div>
-    }
-    else
-    {
-        <div class="card mt-3">
-            <div class="card-header">
-                Please login
-            </div>
-            <div class="card-body">
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <input type="text" name="PlayerID" class="form-control" @bind-value="PlayerID" placeholder="Please enter your name..." />
-                    </div>
-                    <div class="form-group col-md-6">
-                        <input type="password" name="Password" class="form-control" @bind-value="Password" placeholder="Please enter password to join game..." />
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary" @onclick="@JoinGame">Join Game</button>
-            </div>
+    </div>
+}
+else
+{
+    <div class="card mt-3">
+        <div class="card-header">
+            Please login
         </div>
-    }
-
+        <div class="card-body">
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="SessionID">Session ID</label>
+                    <input type="text" name="SessionID" class="form-control" @bind-value="GameID" />
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="Password">Password</label>
+                    <input type="password" name="Password" class="form-control" @bind-value="Password" />
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="PlayerID">Your name</label>
+                    <input type="text" name="PlayerID" class="form-control" @bind-value="PlayerID" />
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" @onclick="@JoinGame">Join Game</button>
+        </div>
+    </div>
 }
 
 @code {
@@ -103,7 +106,7 @@
     private bool Loaded { get; set; } = false;
     private string PlayerID { get; set; }
     private string Password { get; set; }
-    private Game GameModel { get; set; }
+    private Game GameModel { get; set; } = new Game();
     private string UserAnswer { get; set; }
     private bool LoggedIn { get; set; } = false;
     private bool RevealAnswers { get; set; } = false;
@@ -113,6 +116,9 @@
 
     protected async override Task OnInitializedAsync()
     {
+
+        AppState.ClearException();
+
         await UpdateBoard();
 
         if (connection == null)
@@ -151,6 +157,11 @@
 
     public async Task UpdateBoard()
     {
+        if (GameID == null)
+        {
+            return;
+        }
+
         GameModel = await GameService.GetGameModel(GameID);
         if (GameModel == null)
         {
@@ -223,7 +234,7 @@
 
     public void Dispose()
     {
-        if(connection != null)
+        if (connection != null)
         {
             connection.StopAsync();
         }
